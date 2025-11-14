@@ -1,29 +1,39 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-
+// Create axios instance WITHOUT base URL
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add token to all requests
+// Add request interceptor to add token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = token;
     }
+    
+    // Handle inconsistent backend routing
+    if (config.url?.startsWith('/auth')) {
+      // Auth endpoints: /auth/login, /auth/register
+      config.baseURL = 'http://localhost:8080';
+    } else if (config.url?.startsWith('/flights') || config.url?.startsWith('/bookings')) {
+      // Other endpoints: /api/flights, /api/bookings
+      config.baseURL = 'http://localhost:8080/api';
+    } else {
+      // Default
+      config.baseURL = 'http://localhost:8080';
+    }
+    
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Handle 401 errors globally
+// Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Card } from '../components/Card';
@@ -25,6 +25,7 @@ export const Flights = () => {
     }
     setLoading(true);
     try {
+      // Use the correct endpoint route for inconsistent API
       const { data } = await api.get('/flights', { params: searchParams });
       setFlights(data);
     } catch (error) {
@@ -38,6 +39,21 @@ export const Flights = () => {
   const handleSelectFlight = (flight: Flight) => {
     selectFlight(flight);
     navigate('/booking');
+  };
+
+  // Helper functions to avoid NaN and invalid dates
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return 'Date N/A';
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? 'Date N/A' : d.toLocaleDateString();
+  };
+
+  const safeFormatTime = (timeStr?: string) => {
+    // Some APIs may provide time as "09:30" or as "2025-11-15T09:30:00"
+    if (!timeStr) return 'Time N/A';
+    if (timeStr.includes('T')) return timeStr.split('T')[1]?.slice(0, 5) || timeStr;
+    if (/^\d{2}:\d{2}(:\d{2})?$/.test(timeStr)) return timeStr.slice(0, 5);
+    return timeStr;
   };
 
   return (
@@ -93,24 +109,30 @@ export const Flights = () => {
         <div className="space-y-4">
           {flights.length > 0 ? (
             flights.map((flight) => (
-              <Card key={flight.id} className="hover:shadow-md transition">
+              <Card key={flight.flightId || flight.id} className="hover:shadow-md transition">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-xl font-bold text-tertiary font-inter">{flight.flightNumber}</h3>
+                    <h3 className="text-xl font-bold text-tertiary font-inter">
+                      {flight.flightNumber || 'Flight'}
+                    </h3>
                     <p className="text-gray-600">
                       {flight.source} → {flight.destination}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {formatTime(flight.departureTime)} - {formatTime(flight.arrivalTime)} 
+                      {safeFormatTime(flight.departureTime || flight.time)} - {safeFormatTime(flight.arrivalTime)}
+                      {' '}
                       ({getFlightDuration(flight.departureTime, flight.arrivalTime)})
                     </p>
                     <p className="text-sm text-gray-500">
-                      {flight.aircraft} | {flight.availableSeats} seats available
+                      {flight.aircraft || 'Aircraft'} | {flight.availableSeats || 'N/A'} seats available
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {safeFormatDate(flight.date)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(flight.baseFare)}
+                      {formatCurrency(flight.baseFare) || '₹N/A'}
                     </p>
                     <button
                       onClick={() => handleSelectFlight(flight)}
