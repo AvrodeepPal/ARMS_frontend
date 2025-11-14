@@ -5,7 +5,7 @@ import api from '../services/api';
 interface AuthContextType {
   auth: AuthState;
   booking: BookingState;
-  login: (email: string, password: string) => Promise<User>;
+  login: (username: string, password: string) => Promise<User>;
   register: (userData: any) => Promise<User>;
   logout: () => void;
   selectFlight: (flight: Flight) => void;
@@ -25,20 +25,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     bookingId: null,
   });
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setAuth({ user: data.user, token: data.token });
-    return data.user;
+  const login = useCallback(async (username: string, password: string) => {
+    try {
+      const { data } = await api.post('/auth/login', { 
+        username,  // CHANGED from 'email' to 'username'
+        password 
+      });
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setAuth({ user: data.user, token: data.token });
+      return data.user;
+    } catch (error: any) {
+      console.error('Login error:', error.response?.data);
+      throw error;
+    }
   }, []);
 
   const register = useCallback(async (userData: any) => {
-    const { data } = await api.post('/auth/register', userData);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    setAuth({ user: data.user, token: data.token });
-    return data.user;
+    try {
+      const payload = {
+        username: userData.fullName,  // CHANGED: Use fullName as username if backend doesn't have separate field
+        password: userData.password,
+        email: userData.email,
+        fullName: userData.fullName,
+        phone: userData.phone,
+        dob: userData.dob,
+        passportId: userData.passportId,
+      };
+      
+      const { data } = await api.post('/auth/register', payload);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setAuth({ user: data.user, token: data.token });
+      return data.user;
+    } catch (error: any) {
+      console.error('Register error:', error.response?.data);
+      throw error;
+    }
   }, []);
 
   const logout = useCallback(() => {

@@ -90,15 +90,18 @@ export const Auth = () => {
           {isLogin ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Email / Phone</label>
-                <input
-                  type="text"
-                  required
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  placeholder="Enter email or phone"
-                />
+                // CHANGED (asking for username)
+<label className="block text-sm font-medium mb-1">Username</label>
+<input
+  type="text"
+  required
+  value={loginForm.email}  // Still uses same state variable for simplicity
+  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+  className="w-full border border-gray-300 rounded px-3 py-2"
+  placeholder="Enter username"
+/>
+
+
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Password</label>
